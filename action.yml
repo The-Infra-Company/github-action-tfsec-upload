@@ -21,10 +21,7 @@ inputs:
     description: |
       Trivy command [aws,config,filesystem,image,kubernetes,rootfs,sbom,vm]
     required: true
-  trivy_target:
-    description: |
-      Trivy target to scan
-    required: true
+    default: 'config'
   trivy_version:
     description: |
       The version of trivy to install.

@@ -13,11 +13,6 @@ if [[ -z "${INPUT_TRIVY_COMMAND}" ]]; then
   exit 1
 fi
 
-if [[ -z "${INPUT_TRIVY_TARGET}" ]]; then
-  echo "Error: Missing required input 'trivy_target'."
-  exit 1
-fi
-
 cd "${GITHUB_WORKSPACE}/${INPUT_WORKING_DIRECTORY}" || exit
 
 echo '::group::Preparing ...'
@@ -99,7 +94,7 @@ echo '::group:: Running trivy ...'
   touch "$SARIF_FILE"
 
   # shellcheck disable=SC2086
-  "${TRIVY_PATH}/trivy" --format=sarif ${INPUT_TRIVY_FLAGS:-} ${INPUT_TRIVY_COMMAND} ${INPUT_TRIVY_TARGET} 2> /dev/null | tee "$SARIF_FILE"
+  "${TRIVY_PATH}/trivy" --format=sarif ${INPUT_TRIVY_FLAGS:-} ${INPUT_TRIVY_COMMAND} 2> /dev/null | tee "$SARIF_FILE"
 
   # Validate SARIF file format
   if ! jq empty "$SARIF_FILE" 2>/dev/null; then

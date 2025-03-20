@@ -44,8 +44,7 @@ jobs:
 | --- | --- | --- | --- |
 | `github_token` | <p>GITHUB_TOKEN</p> | `true` | `${{ github.token }}` |
 | `working_directory` | <p>Directory to run the action on, from the repo root. Default is . (root of the repository)</p> | `false` | `.` |
-| `trivy_command` | <p>Trivy command [aws,config,filesystem,image,kubernetes,rootfs,sbom,vm]</p> | `true` | `""` |
-| `trivy_target` | <p>Trivy target to scan</p> | `true` | `""` |
+| `trivy_command` | <p>Trivy command [aws,config,filesystem,image,kubernetes,rootfs,sbom,vm]</p> | `true` | `config` |
 | `trivy_version` | <p>The version of trivy to install. Default is latest.</p> | `false` | `latest` |
 | `trivy_flags` | <p>List of arguments to send to trivy For the output to be parsable by reviewdog --format=checkstyle is enforced Default is blank.</p> | `false` | `""` |
 <!-- action-docs-inputs source="action.yml" -->
