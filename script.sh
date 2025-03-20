@@ -8,24 +8,40 @@ if [ "${DEBUG_MODE:-false}" == "true" ]; then
   set -x
 fi
 
+if [[ -z "${INPUT_TRIVY_COMMAND}" ]]; then
+  echo "Error: Missing required input 'trivy_command'."
+  exit 1
+fi
+
+if [[ -z "${INPUT_TRIVY_TARGET}" ]]; then
+  echo "Error: Missing required input 'trivy_target'."
+  exit 1
+fi
+
 cd "${GITHUB_WORKSPACE}/${INPUT_WORKING_DIRECTORY}" || exit
 
 echo '::group::Preparing ...'
   unameOS="$(uname -s)"
   case "${unameOS}" in
-    Linux*)     os=linux;;
-    Darwin*)    os=darwin;;
-    CYGWIN*)    os=windows;;
-    MINGW*)     os=windows;;
-    MSYS_NT*)   os=windows;;
+    Linux*)     os=Linux;;
+    Darwin*)    os=macOS;;
+    CYGWIN*)    os=Windows;;
+    MINGW*)     os=Windows;;
+    MSYS_NT*)   os=Windows;;
     *)          echo "Unknown system: ${unameOS}" && exit 1
   esac
 
   unameArch="$(uname -m)"
   case "${unameArch}" in
-    x86*)      arch=amd64;;
-    arm64)     arch=arm64;;
+    x86*)      arch=64bit;;
+    aarch64)   arch=ARM64;;
+    arm64)     arch=ARM64;;
     *)         echo "Unsupported architecture: ${unameArch}. Only AMD64 and ARM64 are supported by the action" && exit 1
+    esac
+
+  case "${os}" in
+    Windows)   archive_extension="zip";;
+    *)         archive_extension="tar.gz";;
   esac
 
   TEMP_PATH="$(mktemp -d)"
@@ -62,6 +78,7 @@ echo "::group:: Installing trivy (${INPUT_TRIVY_VERSION}) ... https://github.com
   echo "ARCHIVE: ${archive}"
   ls
   ### TEST END
+
   if [[ "${os}" = "Windows" ]]; then
     unzip "${archive}"
   else
@@ -102,4 +119,3 @@ echo '::group:: Running trivy ...'
 echo '::endgroup::'
 
 exit "${exit_code}"
-
