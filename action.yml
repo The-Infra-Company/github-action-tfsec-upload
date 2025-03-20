@@ -1,0 +1,55 @@
+name: 'tfsec Sarif Upload'
+description: 'Run tfsec and upload sarif results to GitHub Security tab.'
+author: 'RoseSecurity'
+
+branding:
+  icon: 'cloud'
+  color: 'purple'
+
+inputs:
+  github_token:
+    description: 'GITHUB_TOKEN'
+    required: true
+    default: ${{ github.token }}
+  working_directory:
+    description: |
+      Directory to run the action on, from the repo root.
+      Default is . (root of the repository)
+    default: '.'
+    required: false
+  tfsec_version:
+    description: |
+      The version of tfsec to install.
+      Default is latest.
+    default: 'latest'
+    required: false
+  tfsec_flags:
+    description: |
+      List of arguments to send to tfsec
+      Default is blank.
+    default: ''
+    required: false
+
+outputs:
+  tfsec-return-code:
+    description: 'tfsec command return code'
+    value: ${{ steps.tfsec.outputs.tfsec-return-code }}
+
+runs:
+  using: 'composite'
+  steps:
+    - run: $GITHUB_ACTION_PATH/script.sh
+      id: tfsec
+      shell: bash
+      env:
+        INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        INPUT_TFSEC_VERSION: ${{ inputs.tfsec_version }}
+        INPUT_TFSEC_FLAGS: ${{ inputs.tfsec_flags }}
+
+    - name: Upload tfsec Sarif Findings
+      id: upload
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ github.workspace }}/tfsec-results.sarif
+      if: always()
