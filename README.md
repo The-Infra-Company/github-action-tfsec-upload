@@ -2,8 +2,7 @@
 
 A GitHub Action to run Trivy and post the results to the GitHub Security tab.
 
-![trivy-findings](https://github.com/user-attachments/assets/b6b13af0-1bf3-40b1-8558-858ce9ee5a39)
-
+![trivy-findings](https://github.com/user-attachments/assets/127a9bac-0320-4e40-8c7c-bfc60314a390)
 
 ## Usage
 
@@ -31,8 +30,6 @@ jobs:
 
       - name: Run Trivy
         uses: The-Infra-Company/github-action-trivy-upload@0.2.0
-        env:
-          DEBUG_MODE: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: "terraform/modules/vpc"
