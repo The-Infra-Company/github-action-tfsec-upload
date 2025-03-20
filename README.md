@@ -8,7 +8,7 @@ A GitHub Action to run Trivy and post the results to the GitHub Security tab.
 ## Usage
 
 ```yaml
-name: trivy
+name: Trivy
 
 on:
   pull_request:
@@ -29,12 +29,13 @@ jobs:
         run: terraform init
         working-directory: "terraform/modules/vpc"
 
-      - name: Run trivy
-        uses: The-Infra-Company/github-action-trivy-upload@v0.1.0
+      - name: Run Trivy
+        uses: The-Infra-Company/github-action-trivy-upload@0.2.0
+        env:
+          DEBUG_MODE: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           working_directory: "terraform/modules/vpc"
-          trivy_flags: "--exclude aws-iam-no-policy-wildcards"
 ```
 
 <!-- action-docs-inputs source="action.yml" -->
