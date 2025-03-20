@@ -2,7 +2,7 @@
 
 A GitHub Action to run tfsec and post the results to the GitHub Security tab.
 
-![findings](./docs/tfsec-findings.png)
+![tfsec-findings](https://github.com/user-attachments/assets/b6b13af0-1bf3-40b1-8558-858ce9ee5a39)
 
 ## Usage
 
