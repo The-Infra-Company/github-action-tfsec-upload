@@ -43,12 +43,8 @@ jobs:
 | --- | --- | --- | --- |
 | `github_token` | <p>GITHUB_TOKEN</p> | `true` | `${{ github.token }}` |
 | `working_directory` | <p>Directory to run the action on, from the repo root. Default is . (root of the repository)</p> | `false` | `.` |
-| `tfsec_version` | <p>The tfsec version to install and use. Default is to use the latest release version.</p> | `false` | `latest` |
-| `tfsec_rulesets` | <p>Space separated, official (from the terraform-linters GitHub organization) tfsec rulesets to install and use. If a pre-configured <code>TFLINT_PLUGIN_DIR</code> is set, rulesets are installed in that directory. Default is empty.</p> | `false` | `""` |
-| `tfsec_init` | <p>Whether or not to run tfsec --init prior to running scan [true,false] Default is <code>false</code>.</p> | `false` | `false` |
-| `tfsec_target_dir` | <p>The target dir for the tfsec command. This is the directory passed to tfsec as opposed to working_directory which is the directory the command is executed from. Default is . (root of the repository)</p> | `false` | `.` |
-| `tfsec_config` | <p>Config file name for tfsec. Default is <code>.tfsec.hcl</code>.</p> | `false` | `.tfsec.hcl` |
-| `flags` | <p>List of arguments to send to tfsec For the output to be parsable by reviewdog --format=checkstyle is enforced Default is --call-module-type=all.</p> | `false` | `--call-module-type=all` |
+| `tfsec_version` | <p>The version of tfsec to install. Default is latest.</p> | `false` | `latest` |
+| `tfsec_flags` | <p>List of arguments to send to tfsec Default is blank.</p> | `false` | `""` |
 <!-- action-docs-inputs source="action.yml" -->
 
 <!-- action-docs-outputs source="action.yml" -->
