@@ -36,24 +36,39 @@ echo '::endgroup::'
 echo "::group:: Installing trivy (${INPUT_TRIVY_VERSION}) ... https://github.com/aquasecurity/trivy"
   test ! -d "${TRIVY_PATH}" && install -d "${TRIVY_PATH}"
 
-  binary="trivy"
-  archive_extension="tar.gz"
+  PREV_DIR=$(pwd)
+  TEMP_DOWNLOAD_PATH="$(mktemp -d)"
+  cd "${TEMP_DOWNLOAD_PATH}" || exit
 
+  archive="trivy.${archive_extension}"
   if [[ "${INPUT_TRIVY_VERSION}" = "latest" ]]; then
+    # latest release is available on this url.
+    # document: https://docs.github.com/en/repositories/releasing-projects-on-github/linking-to-releases
     latest_url="https://github.com/aquasecurity/trivy/releases/latest/"
     release=$(curl $latest_url -s -L -I -o /dev/null -w '%{url_effective}' | awk -F'/' '{print $NF}')
   else
     release="${INPUT_TRIVY_VERSION}"
   fi
-
   release_num=${release/#v/}
   url="https://github.com/aquasecurity/trivy/releases/download/${release}/trivy_${release_num}_${os}-${arch}.${archive_extension}"
+  # Echo url for testing
+  echo "Downloading ${url} to ${archive}"
+  curl --silent --show-error --fail \
+    --location "${url}" \
+    --output "${archive}"
 
-  echo "Downloading ${url}"
-  curl --silent --show-error --fail --location "${url}" --output "trivy.${archive_extension}"
-
-  tar -xzf "trivy.${archive_extension}"
+  ### TEST
+  echo "URL: ${url}"
+  echo "ARCHIVE: ${archive}"
+  ls
+  ### TEST END
+  if [[ "${os}" = "Windows" ]]; then
+    unzip "${archive}"
+  else
+    tar -xzf "${archive}"
+  fi
   install trivy "${TRIVY_PATH}"
+  cd "${PREV_DIR}" || exit
 echo '::endgroup::'
 
 echo "::group:: Print trivy details ..."
