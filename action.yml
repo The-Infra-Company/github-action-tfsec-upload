@@ -1,5 +1,5 @@
-name: 'tfsec Sarif Upload'
-description: 'Run tfsec and upload sarif results to GitHub Security tab.'
+name: 'Trivy Sarif Upload'
+description: 'Run Trivy and upload sarif results to GitHub Security tab.'
 author: 'RoseSecurity'
 
 branding:
@@ -17,39 +17,47 @@ inputs:
       Default is . (root of the repository)
     default: '.'
     required: false
-  tfsec_version:
+  trivy_command:
     description: |
-      The version of tfsec to install.
+      Trivy command [aws,config,filesystem,image,kubernetes,rootfs,sbom,vm]
+    required: true
+    default: 'config'
+  trivy_version:
+    description: |
+      The version of trivy to install.
       Default is latest.
     default: 'latest'
     required: false
-  tfsec_flags:
+  trivy_flags:
     description: |
-      List of arguments to send to tfsec
+      List of arguments to send to trivy
+      For the output to be parsable by reviewdog --format=checkstyle is enforced
       Default is blank.
     default: ''
     required: false
 
 outputs:
-  tfsec-return-code:
-    description: 'tfsec command return code'
-    value: ${{ steps.tfsec.outputs.tfsec-return-code }}
+  trivy-return-code:
+    description: 'trivy command return code'
+    value: ${{ steps.trivy.outputs.trivy-return-code }}
 
 runs:
   using: 'composite'
   steps:
     - run: $GITHUB_ACTION_PATH/script.sh
-      id: tfsec
+      id: trivy
       shell: bash
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
-        INPUT_TFSEC_VERSION: ${{ inputs.tfsec_version }}
-        INPUT_TFSEC_FLAGS: ${{ inputs.tfsec_flags }}
+        INPUT_TRIVY_VERSION: ${{ inputs.trivy_version }}
+        INPUT_TRIVY_COMMAND: ${{ inputs.trivy_command }}
+        INPUT_TRIVY_TARGET: ${{ inputs.trivy_target }}
+        INPUT_TRIVY_FLAGS: ${{ inputs.trivy_flags }}
 
-    - name: Upload tfsec Sarif Findings
+    - name: Upload trivy Sarif Findings
       id: upload
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: ${{ github.workspace }}/tfsec-results.sarif
+        sarif_file: ${{ github.workspace }}/trivy-results.sarif
       if: always()

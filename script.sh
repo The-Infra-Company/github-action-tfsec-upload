@@ -8,81 +8,109 @@ if [ "${DEBUG_MODE:-false}" == "true" ]; then
   set -x
 fi
 
+if [[ -z "${INPUT_TRIVY_COMMAND}" ]]; then
+  echo "Error: Missing required input 'trivy_command'."
+  exit 1
+fi
+
 cd "${GITHUB_WORKSPACE}/${INPUT_WORKING_DIRECTORY}" || exit
 
 echo '::group::Preparing ...'
   unameOS="$(uname -s)"
   case "${unameOS}" in
-    Linux*)     os=linux;;
-    Darwin*)    os=darwin;;
-    CYGWIN*)    os=windows;;
-    MINGW*)     os=windows;;
-    MSYS_NT*)   os=windows;;
+    Linux*)     os=Linux;;
+    Darwin*)    os=macOS;;
+    CYGWIN*)    os=Windows;;
+    MINGW*)     os=Windows;;
+    MSYS_NT*)   os=Windows;;
     *)          echo "Unknown system: ${unameOS}" && exit 1
   esac
 
   unameArch="$(uname -m)"
   case "${unameArch}" in
-    x86*)      arch=amd64;;
-    arm64)     arch=arm64;;
+    x86*)      arch=64bit;;
+    aarch64)   arch=ARM64;;
+    arm64)     arch=ARM64;;
     *)         echo "Unsupported architecture: ${unameArch}. Only AMD64 and ARM64 are supported by the action" && exit 1
     esac
 
+  case "${os}" in
+    Windows)   archive_extension="zip";;
+    *)         archive_extension="tar.gz";;
+  esac
+
   TEMP_PATH="$(mktemp -d)"
   echo "Detected ${os} running on ${arch}, will install tools in ${TEMP_PATH}"
-  TFSEC_PATH="${TEMP_PATH}/tfsec"
+  TRIVY_PATH="${TEMP_PATH}/trivy"
 echo '::endgroup::'
 
-echo "::group:: Installing tfsec (${INPUT_TFSEC_VERSION}) ... https://github.com/aquasecurity/tfsec"
-  test ! -d "${TFSEC_PATH}" && install -d "${TFSEC_PATH}"
+echo "::group:: Installing trivy (${INPUT_TRIVY_VERSION}) ... https://github.com/aquasecurity/trivy"
+  test ! -d "${TRIVY_PATH}" && install -d "${TRIVY_PATH}"
 
-  binary="tfsec"
-  if [[ "${INPUT_TFSEC_VERSION}" = "latest" ]]; then
+  PREV_DIR=$(pwd)
+  TEMP_DOWNLOAD_PATH="$(mktemp -d)"
+  cd "${TEMP_DOWNLOAD_PATH}" || exit
+
+  archive="trivy.${archive_extension}"
+  if [[ "${INPUT_TRIVY_VERSION}" = "latest" ]]; then
     # latest release is available on this url.
     # document: https://docs.github.com/en/repositories/releasing-projects-on-github/linking-to-releases
-    url="https://github.com/aquasecurity/tfsec/releases/latest/download/tfsec-${os}-${arch}"
+    latest_url="https://github.com/aquasecurity/trivy/releases/latest/"
+    release=$(curl $latest_url -s -L -I -o /dev/null -w '%{url_effective}' | awk -F'/' '{print $NF}')
   else
-    url="https://github.com/aquasecurity/tfsec/releases/download/${INPUT_TFSEC_VERSION}/tfsec-${os}-${arch}"
+    release="${INPUT_TRIVY_VERSION}"
   fi
-  if [[ "${os}" = "windows" ]]; then
-    url+=".exe"
-    binary+=".exe"
-  fi
-
+  release_num=${release/#v/}
+  url="https://github.com/aquasecurity/trivy/releases/download/${release}/trivy_${release_num}_${os}-${arch}.${archive_extension}"
+  # Echo url for testing
+  echo "Downloading ${url} to ${archive}"
   curl --silent --show-error --fail \
     --location "${url}" \
-    --output "${binary}"
-  install tfsec "${TFSEC_PATH}"
+    --output "${archive}"
+
+  ### TEST
+  echo "URL: ${url}"
+  echo "ARCHIVE: ${archive}"
+  ls
+  ### TEST END
+
+  if [[ "${os}" = "Windows" ]]; then
+    unzip "${archive}"
+  else
+    tar -xzf "${archive}"
+  fi
+  install trivy "${TRIVY_PATH}"
+  cd "${PREV_DIR}" || exit
 echo '::endgroup::'
 
-echo "::group:: Print tfsec details ..."
-  "${TFSEC_PATH}/tfsec" --version
+echo "::group:: Print trivy details ..."
+  "${TRIVY_PATH}/trivy" --version
 echo '::endgroup::'
 
-echo '::group:: Running tfsec ...'
+echo '::group:: Running trivy ...'
   set +Eeuo pipefail
 
-  SARIF_FILE="${GITHUB_WORKSPACE}/tfsec-results.sarif"
+  SARIF_FILE="${GITHUB_WORKSPACE}/trivy-results.sarif"
   touch "$SARIF_FILE"
 
   # shellcheck disable=SC2086
-  "${TFSEC_PATH}/tfsec" --format=sarif ${INPUT_TFSEC_FLAGS:-} . 2> /dev/null | tee "$SARIF_FILE"
+  "${TRIVY_PATH}/trivy" ${INPUT_TRIVY_COMMAND} --format=sarif ${INPUT_TRIVY_FLAGS:-} . 2> /dev/null | tee "$SARIF_FILE"
 
-    # Validate SARIF file format
+  # Validate SARIF file format
   if ! jq empty "$SARIF_FILE" 2>/dev/null; then
-    echo "tfsec SARIF file is invalid. Exiting."
+    echo "Trivy SARIF file is invalid. Exiting."
     exit 1
   fi
 
   # Check if SARIF file has results (non-empty "runs" key)
   if ! jq -e '.runs | length > 0' "$SARIF_FILE" >/dev/null; then
-    echo "No tfsec issues found. Generating an empty SARIF file."
+    echo "No trivy issues found. Generating an empty SARIF file."
     echo '{"version": "2.1.0", "runs": []}' | tee "$SARIF_FILE"
   fi
 
-  echo "tfsec SARIF report is ready."
+  echo "Trivy SARIF report is ready."
   exit_code=0
-  echo "tfsec-return-code=${exit_code}" >> "${GITHUB_OUTPUT}"
+  echo "trivy-return-code=${exit_code}" >> "${GITHUB_OUTPUT}"
 echo '::endgroup::'
 
 exit "${exit_code}"
